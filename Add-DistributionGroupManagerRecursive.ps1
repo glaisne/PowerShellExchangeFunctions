@@ -25,7 +25,8 @@ function Add-DistributionGroupManagerRecursive
 		[Parameter(Mandatory=$true)]
 		$DistributionGroup,
 		[Parameter(Mandatory=$true)]
-		$Manager
+		$Manager,
+        [Switch] $Force
 	)
 
 	begin{
@@ -49,6 +50,7 @@ function Add-DistributionGroupManagerRecursive
 	}
 
 	Process{
+        Write-Verbose "`$Force = $Force"
 		$DL = $null
 		$ManagerToAdd = $null
 
@@ -127,9 +129,10 @@ function Add-DistributionGroupManagerRecursive
                 Write-verbose "Setting the distribution group managers to $(write-AsCSV $Managers)"
 
                 
-                if ( $PSCmdlet.ShouldContinue("Are you sure you want to make this change?","Setting ManagedBy to $(write-AsCSV $Managers) on target $($DL.Identity)"  ) )
+                if ( $PSCmdlet.ShouldProcess($($DL.Identity), "Setting ManageBy to $(write-AsCSV $Managers)") ) 
                 {
-                    if ( $PSCmdlet.ShouldProcess($($DL.Identity), "Setting ManageBy to $(write-AsCSV $Managers)") ) 
+                    Write-Verbose "`$Force = $Force"
+                    if ( $Force -or $($PSCmdlet.ShouldContinue("Are you sure you want to make this change?","Setting ManagedBy to $(write-AsCSV $Managers) on target $($DL.Identity)"  )) )
                     {
 				        try
 				        {
@@ -166,7 +169,14 @@ function Add-DistributionGroupManagerRecursive
 		{
 			foreach ( $group in $(Get-DistributionGroupMember $dl |?{$_.recipientType -like "*mail*Group*"}) )
 			{
-				Add-distributionGroupManagerRecursive -DistributionGroup $($Group.identity) -Manager $Manager
+                if ($force)
+                {
+				    Add-distributionGroupManagerRecursive -DistributionGroup $($Group.identity) -Manager $Manager -Force
+                }
+                else
+                {
+				    Add-distributionGroupManagerRecursive -DistributionGroup $($Group.identity) -Manager $Manager
+                }
 			}
 		}
 
