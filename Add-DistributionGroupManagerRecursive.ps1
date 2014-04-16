@@ -12,7 +12,17 @@ function Add-DistributionGroupManagerRecursive
 	Add-DistributionGroupManagerRecursive -DistributionGroup DistGroup -Manager DDuck
 
     This example adds the mailbox DDuck to the list of managers in the distribution group
-    DistGroup.
+    DistGroup. Users will be prompted for confirmation of any changes which will occur.
+.EXAMPLE
+	Add-DistributionGroupManagerRecursive -DistributionGroup DistGroup -Manager DDuck -Force
+
+    This example will add DDuck to the list of managers in the distribution group DistGroup
+    and will not be prompted for any confirmations.
+.EXAMPLE
+   Add-DistributionGroupManagerRecursive -DistributionGroup DistGroup -Manager DDuck -WhatIf
+
+   This example will add DDuck to the list of managers in the distribution group DistGroup
+   but it will not make any changes and only note what changes would have occured.
 .PARAMETER DistributionGroup
 	This is the distribution group at the top of the hierarchy. Every Distribution Group 
     below this one will be modified to add the specified manager to the list of existing
