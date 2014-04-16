@@ -139,7 +139,7 @@ function Add-DistributionGroupManagerRecursive
 					        Set-DistributionGroup $($DL.Identity) `
                                 -ManagedBy $Managers `
                                 -BypassSecurityGroupManagerCheck `
-                                -whatif -ErrorAction "Stop"
+                                -ErrorAction "Stop"
 				        }
 				        catch [System.Management.Automation.RuntimeException]
 				        {
