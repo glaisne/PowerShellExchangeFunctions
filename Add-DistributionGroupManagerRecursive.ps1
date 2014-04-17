@@ -1,4 +1,7 @@
 
+
+
+
 function Add-DistributionGroupManagerRecursive
 {
 
@@ -36,7 +39,7 @@ function Add-DistributionGroupManagerRecursive
 		$DistributionGroup,
 		[Parameter(Mandatory=$true)]
 		$Manager,
-        [Switch] $Force
+        [Boolean] $Confirm = $True
 	)
 
 	begin{
@@ -60,7 +63,7 @@ function Add-DistributionGroupManagerRecursive
 	}
 
 	Process{
-        Write-Verbose "`$Force = $Force"
+
 		$DL = $null
 		$ManagerToAdd = $null
 
@@ -141,8 +144,8 @@ function Add-DistributionGroupManagerRecursive
                 
                 if ( $PSCmdlet.ShouldProcess($($DL.Identity), "Setting ManageBy to $(write-AsCSV $Managers)") ) 
                 {
-                    Write-Verbose "`$Force = $Force"
-                    if ( $Force -or $($PSCmdlet.ShouldContinue("Are you sure you want to make this change?","Setting ManagedBy to $(write-AsCSV $Managers) on target $($DL.Identity)"  )) )
+
+                    if ( -Not $Confirm -or $($PSCmdlet.ShouldContinue("Are you sure you want to make this change?","Setting ManagedBy to $(write-AsCSV $Managers) on target $($DL.Identity)"  )) )
                     {
 				        try
 				        {
