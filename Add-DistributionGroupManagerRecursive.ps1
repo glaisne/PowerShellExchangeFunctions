@@ -39,26 +39,26 @@ function Add-DistributionGroupManagerRecursive
 		$DistributionGroup,
 		[Parameter(Mandatory=$true)]
 		$Manager,
-        [Boolean] $Confirm = $True
+		[Boolean] $Confirm = $True
 	)
 
 	begin{
 		$Recursive = $True
 
-        function Write-AsCSV
-        {
-            param([string[]] $List)
+	function Write-AsCSV
+	{
+		param([string[]] $List)
 
-            [string] $Result = ([string]::Empty)
+		[string] $Result = ([string]::Empty)
 
-            foreach ($Entry in $List)
-            {
-                $Result += "$Entry,"
-            }
-            $Result = $Result.TrimEnd(", ")
+		foreach ($Entry in $List)
+		{
+			$Result += "$Entry,"
+		}
+		$Result = $Result.TrimEnd(", ")
 
-            Return $Result
-        }
+		Return $Result
+	}
 
 	}
 
@@ -83,8 +83,6 @@ function Add-DistributionGroupManagerRecursive
 			throw $_
 		}
 
-		
-
 		write-verbose "Getting Distribution Group $DistributionGroup"
 
 		try
@@ -95,9 +93,9 @@ function Add-DistributionGroupManagerRecursive
 		{
 			write-host ("Exception: " + $Error[0].Exception.GetType().FullName)
 			write-host $Error[0].Exception.Message
-            $Error[0] |fl * -force | out-string -stream |% {write-host "Exception: $_" }
-            write-host "Exception resulted from this call:"
-            write-host "`$DL = Get-DistributionGroup $DistributionGroup -ErrorAction ""Stop"""
+			$Error[0] |fl * -force | out-string -stream |% {write-host "Exception: $_" }
+			write-host "Exception resulted from this call:"
+			write-host "`$DL = Get-DistributionGroup $DistributionGroup -ErrorAction ""Stop"""
 		}
 		catch
 		{
@@ -123,8 +121,8 @@ function Add-DistributionGroupManagerRecursive
 					}
 					else
 					{
-                        write-verbose "$M is NOT an appropriate manager of a distribution list."
-                        write-host -fore Red "$M is NOT a valid object to manage a distribution list and is being removed."						
+						write-verbose "$M is NOT an appropriate manager of a distribution list."
+						write-host -fore Red "$M is NOT a valid object to manage a distribution list and is being removed."						
 					}
 				}
 
@@ -132,45 +130,44 @@ function Add-DistributionGroupManagerRecursive
 				$TmpManagers = $null
 
 				if ($($Managers.GetType().Name) -ne "Object[]" `
-                    -And -Not [string]::isNullOrEmpty($Managers))
+					-And -Not [string]::isNullOrEmpty($Managers))
 				{
 					# Chances are we have one user listed.
 					$Managers = @($Managers)
 				}
 				$Managers += $($ManagerToAdd.identity)
 				write-verbose "NewManagers = $(write-AsCSV $Managers)"
-                Write-verbose "Setting the distribution group managers to $(write-AsCSV $Managers)"
+				Write-verbose "Setting the distribution group managers to $(write-AsCSV $Managers)"
 
-                
-                if ( $PSCmdlet.ShouldProcess($($DL.Identity), "Setting ManageBy to $(write-AsCSV $Managers)") ) 
-                {
+				if ( $PSCmdlet.ShouldProcess($($DL.Identity), "Setting ManageBy to $(write-AsCSV $Managers)") ) 
+				{
 
-                    if ( -Not $Confirm -or $($PSCmdlet.ShouldContinue("Are you sure you want to make this change?","Setting ManagedBy to $(write-AsCSV $Managers) on target $($DL.Identity)"  )) )
-                    {
-				        try
-				        {
-					        Set-DistributionGroup $($DL.Identity) `
-                                -ManagedBy $Managers `
-                                -BypassSecurityGroupManagerCheck `
-                                -ErrorAction "Stop"
-				        }
-				        catch [System.Management.Automation.RuntimeException]
-				        {
-					        write-host ("Exception: " + $Error[0].Exception.GetType().FullName)
-					        write-host $Error[0].Exception.Message
-                            $Error[0] |fl * -force | out-string -stream |% {write-host "Exception: $_" }
-                            write-host "Exception resulted from this call:"
-                            write-host "Set-DistributionGroup $($DL.Identity) `
-                                -ManagedBy $Managers `
-                                -BypassSecurityGroupManagerCheck `
-                                -ErrorAction ""Stop"""
-				        }
-				        catch
-				        {
-					        throw $_
-				        }
-                    }
-                }
+					if ( -Not $Confirm -or $($PSCmdlet.ShouldContinue("Are you sure you want to make this change?","Setting ManagedBy to $(write-AsCSV $Managers) on target $($DL.Identity)"  )) )
+					{
+						try
+						{
+							Set-DistributionGroup $($DL.Identity) `
+							-ManagedBy $Managers `
+							-BypassSecurityGroupManagerCheck `
+							-ErrorAction "Stop"
+						}
+						catch [System.Management.Automation.RuntimeException]
+						{
+							write-host ("Exception: " + $Error[0].Exception.GetType().FullName)
+							write-host $Error[0].Exception.Message
+							$Error[0] |fl * -force | out-string -stream |% {write-host "Exception: $_" }
+							write-host "Exception resulted from this call:"
+							write-host "Set-DistributionGroup $($DL.Identity) `
+							-ManagedBy $Managers `
+							-BypassSecurityGroupManagerCheck `
+							-ErrorAction ""Stop"""
+						}
+						catch
+						{
+							throw $_
+						}
+					}
+				}
 			}
 			else
 			{
@@ -182,14 +179,14 @@ function Add-DistributionGroupManagerRecursive
 		{
 			foreach ( $group in $(Get-DistributionGroupMember $dl |?{$_.recipientType -like "*mail*Group*"}) )
 			{
-                if ($force)
-                {
+				if ($force)
+				{
 				    Add-distributionGroupManagerRecursive -DistributionGroup $($Group.identity) -Manager $Manager -Force
-                }
-                else
-                {
-				    Add-distributionGroupManagerRecursive -DistributionGroup $($Group.identity) -Manager $Manager
-                }
+				}
+				else
+				{
+					Add-distributionGroupManagerRecursive -DistributionGroup $($Group.identity) -Manager $Manager
+				}
 			}
 		}
 
