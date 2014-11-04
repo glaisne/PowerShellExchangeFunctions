@@ -1,7 +1,3 @@
-
-
-
-
 function Add-DistributionGroupManagerRecursive
 {
 
@@ -45,20 +41,20 @@ function Add-DistributionGroupManagerRecursive
 	begin{
 		$Recursive = $True
 
-	function Write-AsCSV
-	{
-		param([string[]] $List)
+	    function Write-AsCSV
+	    {
+		    param([string[]] $List)
 
-		[string] $Result = ([string]::Empty)
+		    [string] $Result = ([string]::Empty)
 
-		foreach ($Entry in $List)
-		{
-			$Result += "$Entry,"
-		}
-		$Result = $Result.TrimEnd(", ")
+		    foreach ($Entry in $List)
+		    {
+			    $Result += "$Entry,"
+		    }
+		    $Result = $Result.TrimEnd(", ")
 
-		Return $Result
-	}
+		    Return $Result
+	    }
 
 	}
 
@@ -76,7 +72,7 @@ function Add-DistributionGroupManagerRecursive
 		catch [System.Management.Automation.RuntimeException]
 		{
 			write-host ("Exception: " + $Error[0].Exception.GetType().FullName)
-			write-host $Error[0].Exception.Message
+			throw $($Error[0].Exception.Message)
 		}
 		catch
 		{
@@ -92,87 +88,89 @@ function Add-DistributionGroupManagerRecursive
 		catch [System.Management.Automation.RuntimeException]
 		{
 			write-host ("Exception: " + $Error[0].Exception.GetType().FullName)
-			write-host $Error[0].Exception.Message
 			$Error[0] |fl * -force | out-string -stream |% {write-host "Exception: $_" }
 			write-host "Exception resulted from this call:"
 			write-host "`$DL = Get-DistributionGroup $DistributionGroup -ErrorAction ""Stop"""
+			throw $Error[0].Exception.Message
 		}
 		catch
 		{
 			throw $_
 		}
 
-		If ($DL)
+		If ($DL -eq $null)
+        {
+            return
+        }
+
+		write-verbose "Adding manager $($ManagerToAdd.Identity) to current list of managers ( $(Write-AsCSV $($dl.ManagedBy)) )"
+		$Managers = $($dl.ManagedBy)
+		if ($Managers -NotContains $($ManagerToAdd.identity) -And $Managers -ne $($ManagerToAdd.identity))
 		{
-			write-verbose "Adding manager $($ManagerToAdd.Identity) to current list of managers ( $(Write-AsCSV $($dl.ManagedBy)) )"
-			$Managers = $($dl.ManagedBy)
-			if ($Managers -NotContains $($ManagerToAdd.identity) -And $Managers -ne $($ManagerToAdd.identity))
+			$TmpManagers = @()
+			# Remove any invalid managers
+			foreach ($M in $Managers)
 			{
-				$TmpManagers = @()
-				# Remove any invalid managers
-				foreach ($M in $Managers)
-				{
-					write-verbose "Testing existing manager ($M) to determine if the user is an appropriate manger"
+				write-verbose "Testing existing manager ($M) to determine if the user is an appropriate manger"
 
-					if (get-mailbox $M -errorAction SilentlyContinue)
-					{
-						write-verbose "$M is an appropriate manager of a distribution list."
-						$TmpManagers += $M
-					}
-					else
-					{
-						write-verbose "$M is NOT an appropriate manager of a distribution list."
-						write-host -fore Red "$M is NOT a valid object to manage a distribution list and is being removed."						
-					}
+				if (get-mailbox $M -errorAction SilentlyContinue)
+				{
+					write-verbose "$M is an appropriate manager of a distribution list."
+					$TmpManagers += $M
 				}
-
-				$Managers = $TmpManagers
-				$TmpManagers = $null
-
-				if ($($Managers.GetType().Name) -ne "Object[]" `
-					-And -Not [string]::isNullOrEmpty($Managers))
+				else
 				{
-					# Chances are we have one user listed.
-					$Managers = @($Managers)
+					write-verbose "$M is NOT an appropriate manager of a distribution list."
+					write-host -fore Red "$M is NOT a valid object to manage a distribution list and is being removed."						
 				}
-				$Managers += $($ManagerToAdd.identity)
-				write-verbose "NewManagers = $(write-AsCSV $Managers)"
-				Write-verbose "Setting the distribution group managers to $(write-AsCSV $Managers)"
+			}
 
-				if ( $PSCmdlet.ShouldProcess($($DL.Identity), "Setting ManageBy to $(write-AsCSV $Managers)") ) 
+			$Managers = $TmpManagers
+			$TmpManagers = $null
+
+			if ($($Managers.GetType().Name) -ne "Object[]" `
+				-And -Not [string]::isNullOrEmpty($Managers))
+			{
+				# Chances are we have one user listed.
+				$Managers = @($Managers)
+			}
+			$Managers += $($ManagerToAdd.identity)
+			write-verbose "NewManagers = $(write-AsCSV $Managers)"
+			Write-verbose "Setting the distribution group managers to $(write-AsCSV $Managers)"
+
+			if ( $PSCmdlet.ShouldProcess($($DL.Identity), "Setting ManageBy to $(write-AsCSV $Managers)") ) 
+			{
+
+				if ( -Not $Confirm -or $($PSCmdlet.ShouldContinue("Are you sure you want to make this change?","Setting ManagedBy to $(write-AsCSV $Managers) on target $($DL.Identity)"  )) )
 				{
-
-					if ( -Not $Confirm -or $($PSCmdlet.ShouldContinue("Are you sure you want to make this change?","Setting ManagedBy to $(write-AsCSV $Managers) on target $($DL.Identity)"  )) )
+					try
 					{
-						try
-						{
-							Set-DistributionGroup $($DL.Identity) `
-							-ManagedBy $Managers `
-							-BypassSecurityGroupManagerCheck `
-							-ErrorAction "Stop"
-						}
-						catch [System.Management.Automation.RuntimeException]
-						{
-							write-host ("Exception: " + $Error[0].Exception.GetType().FullName)
-							write-host $Error[0].Exception.Message
-							$Error[0] |fl * -force | out-string -stream |% {write-host "Exception: $_" }
-							write-host "Exception resulted from this call:"
-							write-host "Set-DistributionGroup $($DL.Identity) `
-							-ManagedBy $Managers `
-							-BypassSecurityGroupManagerCheck `
-							-ErrorAction ""Stop"""
-						}
-						catch
-						{
-							throw $_
-						}
+						Set-DistributionGroup $($DL.Identity) `
+						-ManagedBy $Managers `
+						-BypassSecurityGroupManagerCheck `
+						-ErrorAction "Stop"
+					}
+					catch [System.Management.Automation.RuntimeException]
+					{
+						write-host ("Exception: " + $Error[0].Exception.GetType().FullName)
+						write-host $Error[0].Exception.Message
+						$Error[0] |fl * -force | out-string -stream |% {write-host "Exception: $_" }
+						write-host "Exception resulted from this call:"
+						write-host "Set-DistributionGroup $($DL.Identity) `
+						-ManagedBy $Managers `
+						-BypassSecurityGroupManagerCheck `
+						-ErrorAction ""Stop"""
+					}
+					catch
+					{
+						throw $_
 					}
 				}
 			}
-			else
-			{
-				Write-Verbose "$ManagerToAdd is already a manger of the Distribution List $($DL.Identity)"
-			}
+		}
+		else
+		{
+			Write-Verbose "$ManagerToAdd is already a manger of the Distribution List $($DL.Identity)"
 		}
 
 		if ($Recursive)
