@@ -56,16 +56,19 @@
                 {
                     write-verbose "Getting members of group $g"
                     $members = get-DistributionGroupMember $g -resultsize unlimited
+                    break
                 }
                 'MailUniversalSecurityGroup'
                 {
                     write-verbose "Getting members of group $g"
                     $members = get-DistributionGroupMember $g -resultsize unlimited
+                    break
                 }
                 'MailNonUniversalGroup'
                 {
                     write-verbose "Getting members of group $g"
                     $members = get-DistributionGroupMember $g -resultsize unlimited
+                    break
                 }
                 'DynamicDistributionGroup'
                 {
@@ -73,6 +76,7 @@
                     $DynGroup = Get-DynamicDistributionGroup $g
                     write-verbose "Getting members of dynamic group $g"
                     $members = Get-Recipient -RecipientPreviewFilter $($DynGroup.RecipientFilter) -OrganizationalUnit $($DynGroup.RecipientContainer) -resultsize unlimited
+                    break
                 }
                 Default 
                 {
