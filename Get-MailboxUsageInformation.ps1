@@ -88,5 +88,3 @@ function Get-MailboxUsageInformation
     }
 }
 
-Get-MailboxUsageInformation -Identity 'Philip Wonski' | ft -AutoSize
-

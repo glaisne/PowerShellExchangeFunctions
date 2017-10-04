@@ -36,7 +36,7 @@ function Test-O365RecipientReceivedMessages
         $EmailAddress,
 
         # Number of days back to search
-        [ValidateRange(0,30]
+        [ValidateRange(0,30)]
         [int]
         $Days = 1
     )
